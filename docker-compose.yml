@@ -1,0 +1,38 @@
+# Two services, one image. `cpu` runs anywhere; `gpu` additionally requests an
+# NVIDIA device and needs the NVIDIA Container Toolkit plus a driver >= 525 on
+# the host.
+#
+#   docker compose run --rm cpu --check
+#   docker compose run --rm gpu pruning_experiments
+#
+# Host layout expected under ./data (see REPRODUCE.md):
+#   data/CMAPSSData   raw C-MAPSS txt files (you provide these)
+#   data/NEW_DATA     preprocessed tensors written by stage 1
+#   data/NEW_MODELS   trained checkpoints written by stage 2
+#   results/          sheets, CSVs and plots
+
+x-common: &common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: ssp2026-pruning:latest
+  volumes:
+    - ./data/CMAPSSData:/content/drive/MyDrive/Bachelor/new coding/CMAPSSData
+    - ./data/NEW_DATA:/content/drive/MyDrive/Bachelor/new coding/NEW_DATA
+    - ./data/NEW_MODELS:/content/drive/MyDrive/Bachelor/new coding/NEW_MODELS
+    - ./results:/work/results
+  working_dir: /work
+
+services:
+  cpu:
+    <<: *common
+
+  gpu:
+    <<: *common
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

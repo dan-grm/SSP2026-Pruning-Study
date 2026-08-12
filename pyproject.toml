@@ -1,0 +1,46 @@
+[project]
+name = "ssp2026-pruning"
+version = "0.1.0"
+description = "Pruning of CNN-based RUL prediction models on NASA C-MAPSS (bachelor thesis reproduction package)"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+
+# Pinned to the versions the experiment code actually needs. Exact versions are
+# resolved in uv.lock -- that lockfile, not this list, is what makes the runs
+# reproducible.
+dependencies = [
+    # Model training / pruning
+    # <2.9 keeps the default wheels on the CUDA 12.x runtime. The 2.9+/CUDA 13
+    # wheels need an NVIDIA driver >= 580 on the host, which is a much harder
+    # requirement for reviewers than CUDA 12's >= 525.
+    "torch>=2.6,<2.9",
+    "torch-pruning>=1.5,<2",
+    "calflops>=0.3.2,<0.4",
+    # calflops imports transformers at package import time but does not declare
+    # it; on Colab it was preinstalled. Without this, `import calflops` raises
+    # ModuleNotFoundError.
+    "transformers>=4.40,<5",
+    # Data handling and evaluation
+    # pandas <3: setup_data.py uses read_csv(delim_whitespace=True), which was
+    # removed in pandas 3.0 (deprecated since 2.2).
+    "pandas>=2.2,<3",
+    "numpy>=1.26,<3",
+    "scikit-learn>=1.4,<2",
+    "scipy>=1.12,<2",
+    "matplotlib>=3.8,<4",
+    # Imported by src/pruning_experiments.py. In the container the results are
+    # written to local CSVs instead of Google Sheets (see compat/sheets.py),
+    # but the imports still have to resolve.
+    "gspread>=6.0,<7",
+    "gspread-dataframe>=4.0,<5",
+    "google-auth>=2.28,<3",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# One lockfile for both CPU and GPU. The default PyPI torch wheels for
+# linux-x86_64 bundle the CUDA runtime and fall back to CPU when no GPU is
+# visible, so a single image covers both targets.
+package = false

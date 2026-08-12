@@ -1,0 +1,14 @@
+# Mounted experiment data and outputs (see REPRODUCE.md)
+data/
+results/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Model / tensor artifacts
+*.pt
+*.pth
+
+.DS_Store

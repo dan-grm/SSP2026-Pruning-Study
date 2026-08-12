@@ -28,8 +28,13 @@ WORKDIR /app
 # --frozen fails the build if uv.lock and pyproject.toml disagree, which is
 # what makes the image reproducible rather than "whatever resolved today".
 COPY pyproject.toml uv.lock README.md ./
+# ulimit -n: `uv sync` bytecode-compiles the venv (UV_COMPILE_BYTECODE=1) with
+# one thread per core, which opens enough files at once to exceed a default
+# soft nofile limit of 1024 on some hosts ("No file descriptors available").
+# Raising it here is process-local and doesn't require touching the host or
+# Docker daemon config.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    bash -c "ulimit -n 65536 && uv sync --frozen --no-dev"
 
 COPY compat ./compat
 COPY src ./src

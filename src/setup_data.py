@@ -16,7 +16,7 @@ def load_data_files():
     'test': [f"{DRIVE_DIR}test_FD00{i}.txt" for i in range(1, 5)],
     'rul': [f"{DRIVE_DIR}RUL_FD00{i}.txt" for i in range(1, 5)]
   }
-  data = {key: [pd.read_csv(fp, delim_whitespace=True, header=None) for fp in file_paths[key]] for key in file_paths}
+  data = {key: [pd.read_csv(fp, sep=r'\s+', header=None) for fp in file_paths[key]] for key in file_paths}
   return data['train'], data['test'], data['rul']
 
 def drop_columns(dataframes):
@@ -43,6 +43,7 @@ def scale_test_data(dataframes, scalers):
 
 def degrade(df, rul_df=None):
   df['degradation'] = -1
+  df['degradation'] = df['degradation'].astype(float)
   unit = -1
   r_now = 0
   for index, row in df[::-1].iterrows():
@@ -51,8 +52,7 @@ def degrade(df, rul_df=None):
       r_now = 0
       if rul_df is not None:
         r_now = rul_df.iloc[int(engine)-1].values[0]
-        if r_now > 125:
-          r_now = 125 # rectified
+        r_now = min(r_now, 125) # rectified
       unit = engine
     normalized = 2 * (r_now / 125) - 1
     df.at[index, 'degradation'] = normalized

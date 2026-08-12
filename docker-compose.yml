@@ -34,5 +34,8 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              # MIG slice, not a full GPU: pin by MIG UUID instead of `count: 1`
+              # (mutually exclusive with count/device_ids-by-index). Get it from
+              # `nvidia-smi -L` on the host, e.g. MIG-xxxxxxxx-xxxx-....
+              device_ids: ["MIG-<your-mig-uuid>"]
               capabilities: [gpu]

@@ -31,6 +31,5 @@ docker compose run --rm cpu --check
 
 ## Data
 
-The C-MAPSS dataset is not redistributed in this repository. Obtain *Turbofan
-Engine Degradation Simulation Data Set* from the NASA Prognostics Data
-Repository.
+The C-MAPSS dataset is not redistributed in this repository. Obtain *CMAPSS Jet Engine Simulated Data* from the [NASA Prognostics Data
+Repository](https://data.nasa.gov/dataset/cmapss-jet-engine-simulated-data).

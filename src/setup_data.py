@@ -30,6 +30,7 @@ def scale_train_data(dataframes):
   dataframes = drop_columns(dataframes)
   scalers = []
   for df in dataframes:
+    df.iloc[:, 2:] = df.iloc[:, 2:].astype(float)
     scaler = MinMaxScaler(feature_range=(-1, 1))
     df.iloc[:, 2:] = scaler.fit_transform(df.iloc[:, 2:])
     scalers.append(scaler)
@@ -38,6 +39,7 @@ def scale_train_data(dataframes):
 def scale_test_data(dataframes, scalers):
   dataframes = drop_columns(dataframes)
   for df, scaler in zip(dataframes, scalers):
+    df.iloc[:, 2:] = df.iloc[:, 2:].astype(float)
     df.iloc[:, 2:] = scaler.transform(df.iloc[:, 2:])
   return dataframes
 

@@ -104,16 +104,16 @@ def preprocess():
 
   train_data, test_data, rul_data = load_data_files()
 
-  print(train_data[0].head())
-  print(test_data[0].head())
-  print(rul_data[0].iloc[0].values[0])
+  # print(train_data[0].head())
+  # print(test_data[0].head())
+  # print(rul_data[0].iloc[0].values[0])
 
   train_data, scalers = scale_train_data(train_data)
   test_data = scale_test_data(test_data, scalers)
 
-  for train_df, test_df in zip(train_data, test_data):
-    print(train_df.head())
-    print(test_df.head())
+  # for train_df, test_df in zip(train_data, test_data):
+  #   print(train_df.head())
+  #   print(test_df.head())
 
   for train_df, test_df, rul_df in zip(train_data, test_data, rul_data):
     degrade(train_df)
@@ -122,12 +122,12 @@ def preprocess():
   train_timed = [time_window_transform(df, tw) for df, tw in zip(train_data, [30, 20, 30, 15])]
   test_timed = [test_time_window_transform(df, tw) for df, tw in zip(test_data, [30, 20, 30, 15])]
 
-  for train_df, test_df in zip(train_timed, test_timed):
-    print(train_df.shape)
-    print(test_df.shape)
+  # for train_df, test_df in zip(train_timed, test_timed):
+  #   print(train_df.shape)
+  #   print(test_df.shape)
 
-  print(train_timed[0][77][29][-1])
-  print(test_timed[0][77][29][-1])
+  # print(train_timed[0][77][29][-1])
+  # print(test_timed[0][77][29][-1])
 
   torch.save(train_timed, train_path)
   torch.save(test_timed, test_path)

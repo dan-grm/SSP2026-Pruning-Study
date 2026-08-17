@@ -1,3 +1,4 @@
+import copy
 import os
 import torch
 import torch.nn as nn
@@ -146,6 +147,9 @@ def train_model(train_dl, test_dl, sequence_length, file_name, learning_rate=0.0
   scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda)
   rmse_values = []
   scoring_values = []
+  best_val_loss = float('inf')
+  best_epoch = None
+  best_state = None
 
   print(f"Training model for {num_epochs} epochs...")
   for epoch in range(num_epochs):
@@ -189,6 +193,11 @@ def train_model(train_dl, test_dl, sequence_length, file_name, learning_rate=0.0
     rmse_values.append(val_loss)
     scoring_values.append(score_loss)
 
+    if val_loss < best_val_loss:
+      best_val_loss = val_loss
+      best_epoch = epoch + 1
+      best_state = copy.deepcopy(model.state_dict())
+
     if (epoch + 1) % 10 == 0:
       print(f'Epoch [{epoch+1}/{num_epochs}], Training Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}, Scoring: {score_loss:.4f}')
 
@@ -197,6 +206,10 @@ def train_model(train_dl, test_dl, sequence_length, file_name, learning_rate=0.0
   mean_rmse = sum(rmse_values) / len(rmse_values)
   mean_scoring = sum(scoring_values) / len(scoring_values)
   print(f'\nMean RMSE after {num_epochs} epochs: {mean_rmse:.4f}, Mean Scoring: {mean_scoring:.4f}')
+
+  if best_state is not None:
+    print(f'Best Validation Loss: {best_val_loss:.4f} at epoch {best_epoch}, restoring that checkpoint')
+    model.load_state_dict(best_state)
 
   model_path = os.path.join(MODEL_DIR, f"{file_name}.pth")
   torch.save(model.state_dict(), model_path)

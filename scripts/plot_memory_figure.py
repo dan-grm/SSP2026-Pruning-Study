@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 REPO = Path(__file__).resolve().parent.parent
-DEFAULT_CSV = REPO / "results" / "reproduced" / "structured_pruning_data_3.csv"
+DEFAULT_CSV = REPO / "results" / "experiment_logs" / "structured_pruning_data_3.csv"
 DEFAULT_OUTDIR = REPO / "results" / "figures"
 
 RATIOS = list(range(0, 100, 10))

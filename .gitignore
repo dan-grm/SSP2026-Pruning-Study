@@ -1,6 +1,5 @@
-# Mounted experiment data and outputs (see REPRODUCE.md)
+# Mounted experiment data and outputs
 data/
-results/
 
 # Python
 .venv/

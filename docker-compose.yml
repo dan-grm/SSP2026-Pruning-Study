@@ -39,3 +39,26 @@ services:
               # `nvidia-smi -L` on the host, e.g. MIG-xxxxxxxx-xxxx-....
               device_ids: ["MIG-<your-mig-uuid>"]
               capabilities: [gpu]
+
+  # Post-submission experiments (post_submission/, branch post-submission).
+  # Mounts the whole checkout at /work so the scripts, results/ and
+  # presentation_figures/ are read and written in place; the image's src/ is
+  # not used. Same GPU reservation as `gpu`.
+  #
+  #   docker compose run --rm post post_submission/batch_sweep.py
+  post:
+    <<: *common
+    volumes:
+      - ./data/CMAPSSData:/content/drive/MyDrive/Bachelor/new coding/CMAPSSData
+      - ./data/NEW_DATA:/content/drive/MyDrive/Bachelor/new coding/NEW_DATA
+      - ./data/NEW_MODELS:/content/drive/MyDrive/Bachelor/new coding/NEW_MODELS
+      - .:/work
+    entrypoint: ["python"]
+    command: ["--version"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["MIG-<your-mig-uuid>"]
+              capabilities: [gpu]

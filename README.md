@@ -45,6 +45,9 @@ docker-compose.yml    Two services (`cpu`, `gpu`) over that one image.
 pyproject.toml        Dependency constraints.
 uv.lock               Exact pins — what the image actually installs.
 scripts/              Post-hoc figure scripts for the paper (not the pipeline).
+post_submission/      Post-submission experiments for the SSP 2026 talk (batch-size
+                      sweep, fine-tuning control, Welch tests, slide figures);
+                      see post_submission/README.md. Not part of the paper.
 results/figures/      Figures as they appear in the paper.
 results/experiment_logs/   Outputs of our reproduction run: per-run CSVs,
                       aggregated CSVs with avg/std, and all evaluation plots.

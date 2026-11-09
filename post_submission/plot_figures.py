@@ -138,7 +138,7 @@ def end_label(ax, x, y, text, color, dx=2, **kw):
 # --------------------------------------------------------------------------
 
 def fig_accuracy(structured: pd.DataFrame, control: pd.DataFrame | None, outdir: Path):
-    fig, axes = plt.subplots(2, 2, figsize=(st.FULL_WIDTH, 3.1), sharex="col")
+    fig, axes = plt.subplots(2, 2, figsize=(st.FULL_WIDTH, 2.35), sharex="col")
     for col, model in enumerate(MODELS):
         mr = macs_removed(structured, model)
         for row, (kind, label) in enumerate([("rmse", "RMSE [cycles]"), ("score", "S-Score")]):
@@ -163,13 +163,13 @@ def fig_accuracy(structured: pd.DataFrame, control: pd.DataFrame | None, outdir:
             ratio_axis(ax, mr, xlabel=(row == 1))
     handles = [
         Line2D([], [], color=st.CORNFLOWER, marker="o", mfc="white", lw=1.2, label="pruned"),
-        Line2D([], [], color=st.NAVY, marker="o", lw=1.6, label="pruned + 20 epochs fine-tuning"),
-        Line2D([], [], color=st.GREY, ls="--", lw=0.9, label="unpruned baseline"),
+        Line2D([], [], color=st.NAVY, marker="o", lw=1.6, label="+ 20 epochs fine-tuning"),
+        Line2D([], [], color=st.GREY, ls="--", lw=0.9, label="unpruned"),
     ]
     if control is not None:
-        handles.append(plt.Rectangle((0, 0), 1, 1, color=st.SAND, label="baseline + same fine-tuning (mean ± std)"))
-    fig.legend(handles=handles, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.1),
-               handlelength=1.8, columnspacing=1.2)
+        handles.append(plt.Rectangle((0, 0), 1, 1, color=st.SAND, label="unpruned + same fine-tuning (±std)"))
+    fig.legend(handles=handles, loc="upper center", ncol=len(handles), bbox_to_anchor=(0.5, 1.08),
+               handlelength=1.6, columnspacing=1.0)
     fig.tight_layout(h_pad=0.4)
     st.save(fig, outdir, "accuracy_structured_control" if control is not None else "accuracy_structured")
 
@@ -199,7 +199,7 @@ def fig_unstructured_vs_structured(paper: dict[str, pd.DataFrame], outdir: Path)
 
 
 def fig_relative_resources(structured: pd.DataFrame, model: str, outdir: Path):
-    fig, ax = plt.subplots(figsize=(st.FULL_WIDTH * 0.8, st.HEIGHT))
+    fig, ax = plt.subplots(figsize=(st.FULL_WIDTH * 0.8, st.HEIGHT + 0.3))
     mr = macs_removed(structured, model)
     entries = [
         ("MACs", "MACs", st.NAVY, "-"),
@@ -217,7 +217,7 @@ def fig_relative_resources(structured: pd.DataFrame, model: str, outdir: Path):
     # Keep end labels at least 9 percentage points apart.
     ends.sort()
     for i in range(1, len(ends)):
-        ends[i][0] = max(ends[i][0], ends[i - 1][0] + 9)
+        ends[i][0] = max(ends[i][0], ends[i - 1][0] + 12)
     for y_label, text in ends:
         ax.annotate(text, (90, y_label), xytext=(6, 0), textcoords="offset points", va="center",
                     fontsize=8, color=st.INK, annotation_clip=False)
@@ -264,7 +264,7 @@ def fig_memory_kinds(sweep: pd.DataFrame, structured: pd.DataFrame, model: str, 
         return
     mr = macs_removed(structured, model)
     batches = [b for b in (512, 1) if b in set(sub.batch_size)]
-    fig, axes = plt.subplots(1, len(batches), figsize=(st.FULL_WIDTH, st.HEIGHT), sharey=True)
+    fig, axes = plt.subplots(1, len(batches), figsize=(st.FULL_WIDTH, st.HEIGHT + 0.4), sharey=True)
     axes = np.atleast_1d(axes)
     for ax, batch in zip(axes, batches):
         d = sub[sub.batch_size == batch].sort_values("ratio")
@@ -273,18 +273,16 @@ def fig_memory_kinds(sweep: pd.DataFrame, structured: pd.DataFrame, model: str, 
         if "peak_model_mb" in d:
             ax.plot(d.ratio, d.peak_model_mb, color=st.CORNFLOWER, marker="^",
                     label="peak − cuBLAS workspace")
-        ax.axhline(STM32N6_RAM_MB, color=st.GREY, ls="--", lw=0.9)
-        # On the line, with a white box, so it clears the series above and below it.
-        ax.annotate(f"STM32N6 RAM ({STM32N6_RAM_MB} MB)", (45, STM32N6_RAM_MB), ha="center", va="center",
-                    fontsize=7.5, color=st.INK_MUTED,
-                    bbox=dict(boxstyle="square,pad=0.15", facecolor="white", edgecolor="none"))
+        ax.axhline(STM32N6_RAM_MB, color=st.GREY, ls="--", lw=0.9, label=f"STM32N6 RAM ({STM32N6_RAM_MB} MB)")
         plain_log_y(ax)
+        ax.yaxis.set_major_locator(FixedLocator([0.01, 0.1, 1, 10, 100, 1000]))
         ratio_axis(ax, mr)
         ax.set_title(f"batch {batch}")
     axes[0].set_ylabel("GPU memory [MB]")
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=len(handles), bbox_to_anchor=(0.5, 1.07))
-    fig.tight_layout()
+    fig.legend(handles, labels, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.0),
+               handlelength=1.8, columnspacing=1.5)
+    fig.tight_layout(rect=(0, 0, 1, 0.86))  # two legend rows above the panels
     st.save(fig, outdir, f"memory_kinds_{model}")
 
 

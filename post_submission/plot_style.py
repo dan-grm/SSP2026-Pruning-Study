@@ -31,7 +31,7 @@ GRID = "#DDD8CC"
 
 FULL_WIDTH = 5.5   # inches
 HALF_WIDTH = 2.7
-HEIGHT = 2.45
+HEIGHT = 1.9   # leaves room for 1-2 lines of slide text under the figure
 
 
 def apply() -> None:

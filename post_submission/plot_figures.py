@@ -80,8 +80,25 @@ def load_control(results_dir: Path) -> pd.DataFrame | None:
 
 
 def load_sweep(results_dir: Path) -> pd.DataFrame | None:
+    """The sweep, plus ``peak_model_mb``: the peak without the cuBLAS workspace.
+
+    ``gpu_idle_alloc_bytes`` is what the caching allocator holds before the
+    model is moved to the GPU. After the first matmul this is a constant
+    8,519,680 B = 8 MiB + 128 KiB, cuBLAS's default workspace on Ampere
+    (CUBLAS_WORKSPACE_CONFIG :4096:2:16:8). It belongs to the GPU runtime, not
+    to the model, and it is part of every ``peak_mem_mb``, so it is subtracted
+    for the model's own peak. The first configuration ran before any matmul and
+    records 0, so the constant is taken from all rows, not per row.
+    """
     path = results_dir / "batch_sweep.csv"
-    return pd.read_csv(path) if path.exists() else None
+    if not path.exists():
+        return None
+    sweep = pd.read_csv(path)
+    if "gpu_idle_alloc_bytes" in sweep and sweep.gpu_idle_alloc_bytes.notna().any():
+        workspace_mb = sweep.gpu_idle_alloc_bytes.max() / 2**20
+        sweep["peak_model_mb"] = sweep.peak_mem_mb - workspace_mb
+        print(f"[plot] cuBLAS workspace: {workspace_mb:.3f} MB, subtracted for peak_model_mb")
+    return sweep
 
 
 # --------------------------------------------------------------------------
@@ -231,6 +248,8 @@ def fig_batch_sweep(sweep: pd.DataFrame, model: str, outdir: Path):
             ax.plot(d.batch_size, d[col], color=color, marker="o", label=f"{ratio} % pruned")
         batch_axis(ax, batches)
         plain_log_y(ax)
+        if col == "gpu_latency_ms":  # spans less than a decade: label more than "1"
+            ax.yaxis.set_major_locator(FixedLocator([0.5, 1, 2, 4, 8, 16]))
         ax.set_title(title)
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, [f"{l} (structured)" if i == 0 else l for i, l in enumerate(labels)],
@@ -251,15 +270,20 @@ def fig_memory_kinds(sweep: pd.DataFrame, structured: pd.DataFrame, model: str, 
         d = sub[sub.batch_size == batch].sort_values("ratio")
         ax.plot(d.ratio, d.profiler_mem_mb, color=st.NAVY, marker="o", label="profiler sum (paper's metric)")
         ax.plot(d.ratio, d.peak_mem_mb, color=st.CORAL, marker="s", label="peak allocated")
+        if "peak_model_mb" in d:
+            ax.plot(d.ratio, d.peak_model_mb, color=st.CORNFLOWER, marker="^",
+                    label="peak − cuBLAS workspace")
         ax.axhline(STM32N6_RAM_MB, color=st.GREY, ls="--", lw=0.9)
-        ax.annotate(f"STM32N6 RAM ({STM32N6_RAM_MB} MB)", (-3, STM32N6_RAM_MB), xytext=(0, -3),
-                    textcoords="offset points", ha="left", va="top", fontsize=7.5, color=st.INK_MUTED)
+        # On the line, with a white box, so it clears the series above and below it.
+        ax.annotate(f"STM32N6 RAM ({STM32N6_RAM_MB} MB)", (45, STM32N6_RAM_MB), ha="center", va="center",
+                    fontsize=7.5, color=st.INK_MUTED,
+                    bbox=dict(boxstyle="square,pad=0.15", facecolor="white", edgecolor="none"))
         plain_log_y(ax)
         ratio_axis(ax, mr)
         ax.set_title(f"batch {batch}")
     axes[0].set_ylabel("GPU memory [MB]")
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.07))
+    fig.legend(handles, labels, loc="upper center", ncol=len(handles), bbox_to_anchor=(0.5, 1.07))
     fig.tight_layout()
     st.save(fig, outdir, f"memory_kinds_{model}")
 
@@ -269,7 +293,7 @@ CHAIN = [  # column in sweep, label, column in paper CSV (None: not in paper)
     ("gpu_latency_ms", "GPU latency", "inference_ms"),
     ("cpu_latency_ms", "CPU latency (1 thread)", None),
     ("profiler_mem_mb", "memory (profiler sum)", "memory_mb"),
-    ("peak_mem_mb", "peak memory", None),
+    ("peak_model_mb", "peak memory (w/o cuBLAS ws.)", None),
     ("params", "parameters", "params"),
     ("size_mb", "model size", "size_mb"),
 ]

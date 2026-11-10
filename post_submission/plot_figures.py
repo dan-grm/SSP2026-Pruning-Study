@@ -237,8 +237,8 @@ def fig_batch_sweep(sweep: pd.DataFrame, model: str, outdir: Path):
     sub = sweep[(sweep.model == model) & (sweep.method == "structured")]
     batches = sorted(sub.batch_size.unique())
     panels = [("profiler_mem_mb", "memory (profiler sum) [MB]"),
-              ("gpu_latency_ms", "GPU latency [ms]"),
-              ("cpu_latency_ms", "CPU latency, 1 thread [ms]")]
+              ("gpu_latency_ms", "GPU latency per batch [ms]"),
+              ("cpu_latency_ms", "CPU latency per batch [ms]")]
     panels = [p for p in panels if sub[p[0]].notna().any()]
     fig, axes = plt.subplots(1, len(panels), figsize=(st.FULL_WIDTH, st.HEIGHT))
     axes = np.atleast_1d(axes)
